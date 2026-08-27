@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MonSalaire</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="theme-color" content="#16264A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bleu-nuit:#16264A;
+    --bleu-primaire:#1F3864;
+    --bleu-clair:#EAF0FA;
+    --vert-accent:#2E8B57;
+    --vert-clair:#E4F5EC;
+    --rouge-alerte:#C0392B;
+    --rouge-clair:#FBEAE8;
+    --fond:#F5F7FA;
+    --carte:#FFFFFF;
+    --texte:#1C2333;
+    --texte-att:#6B7280;
+    --ombre:0 2px 10px rgba(22,38,74,0.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:var(--fond);
+    color:var(--texte);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+    overscroll-behavior-y:contain;
+  }
+  h1,h2,h3,.chiffre-hero{font-family:'Poppins',system-ui,sans-serif;}
+  #app{
+    max-width:480px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    background:var(--fond);
+    padding-bottom:78px;
+  }
+  header.entete{
+    background:linear-gradient(135deg,var(--bleu-nuit),var(--bleu-primaire));
+    color:#fff;
+    padding:18px 20px 22px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    border-radius:0 0 22px 22px;
+    box-shadow:var(--ombre);
+  }
+  header.entete img{width:42px;height:42px;border-radius:12px;}
+  header.entete .titres h1{font-size:17px;margin:0;font-weight:700;}
+  header.entete .titres p{margin:2px 0 0;font-size:12.5px;opacity:.85;font-weight:500;}
+
+  main{flex:1;padding:16px 16px 8px;}
+  .vue{display:none;animation:apparition .18s ease;}
+  .vue.active{display:block;}
+  @keyframes apparition{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  .carte{
+    background:var(--carte);
+    border-radius:18px;
+    padding:18px;
+    box-shadow:var(--ombre);
+    margin-bottom:14px;
+  }
+
+  /* --- Hero solde : jauge circulaire, element signature --- */
+  .hero-solde{display:flex;align-items:center;gap:18px;}
+  .jauge-wrap{position:relative;width:104px;height:104px;flex:none;}
+  .jauge-wrap svg{transform:rotate(-90deg);width:104px;height:104px;}
+  .jauge-fond{fill:none;stroke:#E7EAF2;stroke-width:10;}
+  .jauge-valeur{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dasharray .5s ease;}
+  .jauge-centre{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;}
+  .jauge-centre span.label{font-size:9.5px;color:var(--texte-att);font-weight:600;letter-spacing:.03em;}
+  .hero-texte .label-solde{font-size:12.5px;color:var(--texte-att);font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+  .chiffre-hero{font-size:24px;font-weight:700;margin:2px 0 6px;line-height:1.1;}
+  .badge-alerte{
+    display:inline-flex;align-items:center;gap:5px;
+    background:var(--rouge-clair);color:var(--rouge-alerte);
+    font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:20px;
+  }
+  .badge-ok{
+    display:inline-flex;align-items:center;gap:5px;
+    background:var(--vert-clair);color:var(--vert-accent);
+    font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:20px;
+  }
+
+  .stat-grille{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;}
+  .mini-stat{background:var(--bleu-clair);border-radius:14px;padding:10px 12px;}
+  .mini-stat .lib{font-size:11px;color:var(--bleu-primaire);font-weight:600;opacity:.75;}
+  .mini-stat .val{font-size:15.5px;font-weight:700;margin-top:2px;}
+
+  h2.titre-section{font-size:15px;margin:4px 0 10px;font-weight:700;color:var(--bleu-primaire);}
+
+  .bouton{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;padding:13px 16px;border:none;border-radius:14px;
+    font-family:'Inter',sans-serif;font-weight:600;font-size:14.5px;
+    cursor:pointer;transition:transform .08s ease, opacity .15s ease;
+  }
+  .bouton:active{transform:scale(.97);}
+  .bouton-primaire{background:var(--bleu-primaire);color:#fff;}
+  .bouton-accent{background:var(--vert-accent);color:#fff;}
+  .bouton-alerte{background:var(--rouge-alerte);color:#fff;}
+  .bouton-discret{background:var(--bleu-clair);color:var(--bleu-primaire);}
+  .bouton-fantome{background:transparent;color:var(--bleu-primaire);text-decoration:underline;font-weight:500;padding:8px;}
+  .ligne-boutons{display:flex;gap:10px;}
+  .ligne-boutons .bouton{flex:1;}
+
+  /* --- Charges : bande deroulante --- */
+  .liste-deroulante{
+    max-height:340px;overflow-y:auto;
+    border:1px solid #EEF1F6;border-radius:14px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .ligne-charge{
+    display:flex;align-items:center;gap:12px;
+    padding:12px 14px;border-bottom:1px solid #F0F2F7;
+    background:#fff;
+  }
+  .ligne-charge:last-child{border-bottom:none;}
+  .ligne-charge.inactive{opacity:.5;}
+  .case{
+    flex:none;width:24px;height:24px;border-radius:8px;
+    border:2px solid #CBD3E1;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;transition:.15s;
+  }
+  .case.coche{background:var(--vert-accent);border-color:var(--vert-accent);}
+  .case svg{width:14px;height:14px;stroke:#fff;stroke-width:3;fill:none;display:none;}
+  .case.coche svg{display:block;}
+  .info-charge{flex:1;min-width:0;}
+  .info-charge .lib{font-weight:600;font-size:14px;}
+  .info-charge .cat{font-size:11.5px;color:var(--texte-att);}
+  .montant-charge{font-weight:700;font-size:14px;white-space:nowrap;}
+  .btn-suppr{flex:none;width:30px;height:30px;border-radius:9px;border:none;background:var(--rouge-clair);color:var(--rouge-alerte);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .vide-liste{padding:30px 16px;text-align:center;color:var(--texte-att);font-size:13.5px;}
+
+  /* --- Historique --- */
+  .ligne-histo{display:flex;justify-content:space-between;align-items:center;padding:11px 4px;border-bottom:1px solid #F0F2F7;}
+  .ligne-histo:last-child{border-bottom:none;}
+  .ligne-histo .g .lib{font-weight:600;font-size:13.5px;}
+  .ligne-histo .g .date{font-size:11.5px;color:var(--texte-att);}
+  .ligne-histo .montant{font-weight:700;font-size:13.5px;}
+  .positif{color:var(--vert-accent);}
+  .negatif{color:var(--rouge-alerte);}
+
+  canvas{max-width:100%;}
+
+  /* --- Navigation basse --- */
+  nav.barre-nav{
+    position:fixed;bottom:0;left:0;right:0;
+    max-width:480px;margin:0 auto;
+    background:#fff;border-top:1px solid #EAEDF3;
+    display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+    box-shadow:0 -2px 12px rgba(22,38,74,0.06);
+  }
+  nav.barre-nav button{
+    flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:7px 2px;color:var(--texte-att);font-family:'Inter',sans-serif;font-size:10.5px;font-weight:600;cursor:pointer;
+  }
+  nav.barre-nav button svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;}
+  nav.barre-nav button.actif{color:var(--bleu-primaire);}
+
+  /* --- Modale --- */
+  .fond-modale{
+    position:fixed;inset:0;background:rgba(22,38,74,.45);
+    display:none;align-items:flex-end;justify-content:center;z-index:50;
+  }
+  .fond-modale.ouverte{display:flex;}
+  .modale{
+    background:#fff;width:100%;max-width:480px;border-radius:20px 20px 0 0;
+    padding:20px 20px calc(20px + env(safe-area-inset-bottom));
+    animation:montee .2s ease;
+  }
+  @keyframes montee{from{transform:translateY(24px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .modale h3{margin:0 0 14px;font-size:16px;color:var(--bleu-primaire);}
+  .champ{margin-bottom:12px;}
+  .champ label{display:block;font-size:12.5px;font-weight:600;color:var(--texte-att);margin-bottom:5px;}
+  .champ input,.champ select{
+    width:100%;padding:11px 12px;border:1.5px solid #E3E7EF;border-radius:11px;
+    font-family:'Inter',sans-serif;font-size:14.5px;background:#FAFBFD;
+  }
+  .champ input:focus,.champ select:focus{outline:none;border-color:var(--bleu-primaire);}
+
+  .toast{
+    position:fixed;bottom:92px;left:50%;transform:translateX(-50%) translateY(10px);
+    background:var(--bleu-nuit);color:#fff;padding:11px 18px;border-radius:12px;
+    font-size:13.5px;font-weight:500;opacity:0;transition:.25s;pointer-events:none;z-index:60;
+    max-width:88%;text-align:center;
+  }
+  .toast.visible{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  @media print{
+    nav.barre-nav,.bouton,header.entete .titres p{display:none !important;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="entete">
+    <img src="icons/icon-192.png" alt="MonSalaire">
+    <div class="titres">
+      <h1 id="entete-nom">MonSalaire</h1>
+      <p id="entete-sous">Votre budget, simplement</p>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ===================== TABLEAU DE BORD ===================== -->
+    <section class="vue active" id="vue-dashboard">
+      <div class="carte hero-solde">
+        <div class="jauge-wrap">
+          <svg viewBox="0 0 104 104">
+            <circle class="jauge-fond" cx="52" cy="52" r="44"></circle>
+            <circle class="jauge-valeur" id="jauge-cercle" cx="52" cy="52" r="44"></circle>
+          </svg>
+          <div class="jauge-centre"><span class="label">SOLDE</span></div>
+        </div>
+        <div class="hero-texte">
+          <div class="label-solde">Solde disponible</div>
+          <div class="chiffre-hero" id="txt-solde">0 F CFA</div>
+          <span id="badge-solde" class="badge-ok">Ça va !</span>
+        </div>
+      </div>
+
+      <div class="carte">
+        <div class="stat-grille">
+          <div class="mini-stat"><div class="lib">Revenu du mois</div><div class="val" id="stat-revenu">0</div></div>
+          <div class="mini-stat"><div class="lib">Charges actives</div><div class="val" id="stat-charges">0</div></div>
+          <div class="mini-stat"><div class="lib">Mouvement épargne</div><div class="val" id="stat-mvtepargne">0</div></div>
+          <div class="mini-stat"><div class="lib">Épargne totale</div><div class="val" id="stat-epargne">0</div></div>
+        </div>
+      </div>
+
+      <div class="carte">
+        <div class="ligne-boutons" style="margin-bottom:10px;">
+          <button class="bouton bouton-primaire" onclick="ouvrirModaleSalaire()">+ Salaire</button>
+          <button class="bouton bouton-discret" onclick="allerVue('charges')">Charges</button>
+        </div>
+        <div class="ligne-boutons">
+          <button class="bouton bouton-accent" onclick="ouvrirModaleEpargne('Depot')">+ Épargne</button>
+          <button class="bouton bouton-alerte" onclick="ouvrirModaleEpargne('Retrait')">− Épargne</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CHARGES ===================== -->
+    <section class="vue" id="vue-charges">
+      <h2 class="titre-section">Charges fixes</h2>
+      <div class="carte" style="padding:10px;">
+        <div class="liste-deroulante" id="liste-charges"></div>
+      </div>
+      <button class="bouton bouton-primaire" onclick="ouvrirModaleCharge()">+ Ajouter une charge</button>
+    </section>
+
+    <!-- ===================== EPARGNE / HISTORIQUE ===================== -->
+    <section class="vue" id="vue-historique">
+      <h2 class="titre-section">Historique des opérations</h2>
+      <div class="carte" id="liste-historique" style="padding:6px 14px;"></div>
+    </section>
+
+    <!-- ===================== STATISTIQUES ===================== -->
+    <section class="vue" id="vue-stats">
+      <h2 class="titre-section">Évolution du solde (12 mois)</h2>
+      <div class="carte"><canvas id="graph-evolution" height="190"></canvas></div>
+      <h2 class="titre-section">Répartition des charges actives</h2>
+      <div class="carte"><canvas id="graph-repartition" height="220"></canvas></div>
+    </section>
+
+    <!-- ===================== PARAMETRES ===================== -->
+    <section class="vue" id="vue-parametres">
+      <h2 class="titre-section">Paramètres</h2>
+      <div class="carte">
+        <div class="champ">
+          <label>Votre nom</label>
+          <input type="text" id="param-nom" placeholder="Utilisateur">
+        </div>
+        <div class="champ">
+          <label>Devise</label>
+          <input type="text" id="param-devise" placeholder="F CFA">
+        </div>
+        <div class="champ">
+          <label>Seuil d'alerte de solde</label>
+          <input type="number" id="param-seuil" placeholder="0">
+        </div>
+        <button class="bouton bouton-primaire" onclick="enregistrerParametres()">Enregistrer</button>
+      </div>
+
+      <h2 class="titre-section">Rapport &amp; sauvegarde</h2>
+      <div class="carte">
+        <button class="bouton bouton-discret" style="margin-bottom:10px;" onclick="window.print()">🖨️ Imprimer / Exporter en PDF</button>
+        <button class="bouton bouton-discret" style="margin-bottom:10px;" onclick="exporterSauvegarde()">⬇️ Exporter mes données (sauvegarde)</button>
+        <button class="bouton bouton-fantome" onclick="document.getElementById('input-import').click()">Importer une sauvegarde...</button>
+        <input type="file" id="input-import" accept="application/json" style="display:none" onchange="importerSauvegarde(event)">
+        <p style="font-size:11.5px;color:var(--texte-att);margin:12px 0 0;line-height:1.5;">
+          Vos données restent uniquement sur cet appareil, dans cette page. Pensez à exporter une sauvegarde régulièrement : si vous fermez ou rechargez la page sans avoir importé de sauvegarde au préalable, les données non exportées seront perdues.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="barre-nav">
+    <button class="actif" data-vue="dashboard" onclick="allerVue('dashboard')">
+      <svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+      Accueil
+    </button>
+    <button data-vue="charges" onclick="allerVue('charges')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>
+      Charges
+    </button>
+    <button data-vue="historique" onclick="allerVue('historique')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      Historique
+    </button>
+    <button data-vue="stats" onclick="allerVue('stats')">
+      <svg viewBox="0 0 24 24"><path d="M4 19V9"/><path d="M12 19V5"/><path d="M20 19v-7"/></svg>
+      Stats
+    </button>
+    <button data-vue="parametres" onclick="allerVue('parametres')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Réglages
+    </button>
+  </nav>
+
+  <!-- ===================== MODALES ===================== -->
+  <div class="fond-modale" id="modale-salaire">
+    <div class="modale">
+      <h3>Saisir mon salaire</h3>
+      <div class="champ"><label>Montant net perçu</label><input type="number" id="sal-montant" inputmode="decimal" placeholder="Ex : 250000"></div>
+      <div class="champ"><label>Commentaire (facultatif)</label><input type="text" id="sal-commentaire" placeholder="Ex : prime incluse"></div>
+      <div class="ligne-boutons">
+        <button class="bouton bouton-discret" onclick="fermerModales()">Annuler</button>
+        <button class="bouton bouton-primaire" onclick="validerSalaire()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="fond-modale" id="modale-charge">
+    <div class="modale">
+      <h3>Ajouter une charge fixe</h3>
+      <div class="champ"><label>Libellé</label><input type="text" id="ch-libelle" placeholder="Ex : Loyer"></div>
+      <div class="champ"><label>Catégorie</label><input type="text" id="ch-categorie" placeholder="Ex : Logement"></div>
+      <div class="champ"><label>Montant mensuel</label><input type="number" id="ch-montant" inputmode="decimal" placeholder="Ex : 50000"></div>
+      <div class="ligne-boutons">
+        <button class="bouton bouton-discret" onclick="fermerModales()">Annuler</button>
+        <button class="bouton bouton-primaire" onclick="validerCharge()">Ajouter</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="fond-modale" id="modale-epargne">
+    <div class="modale">
+      <h3 id="epargne-titre">Épargne</h3>
+      <div class="champ"><label>Montant</label><input type="number" id="ep-montant" inputmode="decimal" placeholder="Ex : 30000"></div>
+      <div class="champ"><label>Libellé (facultatif)</label><input type="text" id="ep-libelle" placeholder="Ex : Épargne vacances"></div>
+      <div class="ligne-boutons">
+        <button class="bouton bouton-discret" onclick="fermerModales()">Annuler</button>
+        <button class="bouton bouton-primaire" onclick="validerEpargne()">Valider</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/*===================================================================
+  MonSalaire — application web mobile
+  Meme logique metier que la version Excel/VBA : le solde disponible
+  n'est calcule qu'a un seul endroit (calculerSolde) et tout le reste
+  s'appuie dessus. Donnees conservees en memoire (voir Parametres >
+  Sauvegarde) : aucune information ne quitte cet appareil.
+===================================================================*/
+
+const CLE_CATEGORIES_COULEURS = ['#1F3864','#2E8B57','#C0392B','#D9A441','#6C63FF','#E0678B','#3AAFA9','#8D6E63'];
+
+let etat = {
+  parametres: { nom:'Utilisateur', devise:'F CFA', seuil:0 },
+  salaires: [],      // {id, date:'YYYY-MM-DD', montant, commentaire}
+  charges: [],        // {id, libelle, categorie, montant, active}
+  epargne: [],         // {id, date, libelle, type:'Depot'|'Retrait', montant}
+  historique: []        // {id, date:ISO, type, libelle, montant, solde}
+};
+
+function genId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function moisCourant(){ return new Date().toISOString().slice(0,7); }
+function nomMoisAnnee(iso){
+  const d = new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+}
+function formaterMontant(m){
+  const arrondi = Math.round((m + Number.EPSILON)*100)/100;
+  return arrondi.toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:2}) + ' ' + etat.parametres.devise;
+}
+
+/* ---------------- Calculs centraux (une seule source de verite) ---------------- */
+function revenuMoisCourant(){
+  return etat.salaires.filter(s=>s.date.slice(0,7)===moisCourant()).reduce((a,s)=>a+s.montant,0);
+}
+function totalChargesActives(){
+  return etat.charges.filter(c=>c.active).reduce((a,c)=>a+c.montant,0);
+}
+function mouvementEpargneMoisCourant(){
+  return etat.epargne.filter(e=>e.date.slice(0,7)===moisCourant())
+    .reduce((a,e)=> a + (e.type==='Depot' ? e.montant : -e.montant), 0);
+}
+function soldeEpargneTotal(){
+  return etat.epargne.reduce((a,e)=> a + (e.type==='Depot' ? e.montant : -e.montant), 0);
+}
+function calculerSolde(){
+  return revenuMoisCourant() - totalChargesActives() - mouvementEpargneMoisCourant();
+}
+
+function enregistrerHistorique(type, libelle, montant){
+  etat.historique.unshift({
+    id:genId(), date:new Date().toISOString(), type, libelle, montant, solde:calculerSolde()
+  });
+}
+
+/* ---------------- Rendu du tableau de bord ---------------- */
+function rafraichirDashboard(){
+  const solde = calculerSolde();
+  document.getElementById('txt-solde').textContent = formaterMontant(solde);
+  document.getElementById('stat-revenu').textContent = formaterMontant(revenuMoisCourant());
+  document.getElementById('stat-charges').textContent = formaterMontant(totalChargesActives());
+  document.getElementById('stat-mvtepargne').textContent = formaterMontant(mouvementEpargneMoisCourant());
+  document.getElementById('stat-epargne').textContent = formaterMontant(soldeEpargneTotal());
+
+  const badge = document.getElementById('badge-solde');
+  const seuil = Number(etat.parametres.seuil)||0;
+  if(solde < seuil){
+    badge.className='badge-alerte'; badge.textContent='⚠ Sous le seuil d’alerte';
+  } else if(solde < 0){
+    badge.className='badge-alerte'; badge.textContent='Solde négatif';
+  } else {
+    badge.className='badge-ok'; badge.textContent='Ça va !';
+  }
+
+  // Jauge circulaire : proportion du solde par rapport au revenu du mois (element signature)
+  const circ = 2*Math.PI*44;
+  const revenu = revenuMoisCourant();
+  let ratio = revenu>0 ? Math.max(0,Math.min(1, solde/revenu)) : (solde>0?1:0);
+  const cercle = document.getElementById('jauge-cercle');
+  cercle.style.stroke = solde>=0 ? 'var(--vert-accent)' : 'var(--rouge-alerte)';
+  cercle.style.strokeDasharray = `${circ*ratio} ${circ}`;
+
+  document.getElementById('entete-nom').textContent = 'Bonjour, ' + (etat.parametres.nom||'Utilisateur');
+}
+
+/* ---------------- Charges : bande deroulante a cocher ---------------- */
+function rafraichirCharges(){
+  const conteneur = document.getElementById('liste-charges');
+  if(etat.charges.length===0){
+    conteneur.innerHTML = '<div class="vide-liste">Aucune charge fixe pour le moment.<br>Ajoutez votre loyer, vos abonnements...</div>';
+    return;
+  }
+  conteneur.innerHTML = etat.charges.map(c => `
+    <div class="ligne-charge ${c.active?'':'inactive'}">
+      <div class="case ${c.active?'coche':''}" onclick="basculerCharge('${c.id}')">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="info-charge">
+        <div class="lib">${escapeHtml(c.libelle)}</div>
+        <div class="cat">${escapeHtml(c.categorie||'Autre')}</div>
+      </div>
+      <div class="montant-charge">${formaterMontant(c.montant)}</div>
+      <button class="btn-suppr" onclick="supprimerCharge('${c.id}')">
+        <svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" fill="none"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+      </button>
+    </div>
+  `).join('');
+}
+function basculerCharge(id){
+  const c = etat.charges.find(x=>x.id===id);
+  if(!c) return;
+  c.active = !c.active;
+  enregistrerHistorique('Charge fixe', (c.active?'Activée : ':'Désactivée : ')+c.libelle, c.active?-c.montant:c.montant);
+  rafraichirTout();
+  afficherToast(c.active?'Charge activée':'Charge désactivée');
+}
+function supprimerCharge(id){
+  const c = etat.charges.find(x=>x.id===id);
+  if(!c) return;
+  if(!confirm(`Supprimer définitivement la charge "${c.libelle}" ?`)) return;
+  etat.charges = etat.charges.filter(x=>x.id!==id);
+  enregistrerHistorique('Charge fixe','Supprimée : '+c.libelle, 0);
+  rafraichirTout();
+  afficherToast('Charge supprimée');
+}
+
+/* ---------------- Historique ---------------- */
+function rafraichirHistorique(){
+  const conteneur = document.getElementById('liste-historique');
+  if(etat.historique.length===0){
+    conteneur.innerHTML = '<div class="vide-liste">Aucune opération enregistrée pour le moment.</div>';
+    return;
+  }
+  conteneur.innerHTML = etat.historique.slice(0,80).map(h=>{
+    const signe = h.montant>0?'+':(h.montant<0?'−':'');
+    const classe = h.montant>0?'positif':(h.montant<0?'negatif':'');
+    const d = new Date(h.date);
+    const dateAff = d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="ligne-histo">
+      <div class="g"><div class="lib">${escapeHtml(h.libelle)}</div><div class="date">${h.type} · ${dateAff}</div></div>
+      <div class="montant ${classe}">${h.montant!==0 ? signe+' '+formaterMontant(Math.abs(h.montant)) : '—'}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------------- Statistiques ---------------- */
+let graphEvolution=null, graphRepartition=null;
+function rafraichirStats(){
+  const labels=[], valeurs=[];
+  const chargesActives = totalChargesActives();
+  for(let i=11;i>=0;i--){
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-i);
+    const cle = d.toISOString().slice(0,7);
+    labels.push(d.toLocaleDateString('fr-FR',{month:'short',year:'2-digit'}));
+    const revenuMois = etat.salaires.filter(s=>s.date.slice(0,7)===cle).reduce((a,s)=>a+s.montant,0);
+    const mvtEpargneMois = etat.epargne.filter(e=>e.date.slice(0,7)===cle).reduce((a,e)=>a+(e.type==='Depot'?e.montant:-e.montant),0);
+    valeurs.push(revenuMois - chargesActives - mvtEpargneMois);
+  }
+
+  const ctx1 = document.getElementById('graph-evolution');
+  if(graphEvolution) graphEvolution.destroy();
+  graphEvolution = new Chart(ctx1, {
+    type:'line',
+    data:{ labels, datasets:[{ data:valeurs, borderColor:'#1F3864', backgroundColor:'rgba(31,56,100,.08)', fill:true, tension:.35, pointRadius:3, pointBackgroundColor:'#1F3864' }]},
+    options:{ plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>v.toLocaleString('fr-FR')}}} }
+  });
+
+  const parCategorie = {};
+  etat.charges.filter(c=>c.active).forEach(c=>{
+    const cat = c.categorie || 'Autre';
+    parCategorie[cat] = (parCategorie[cat]||0) + c.montant;
+  });
+  const cats = Object.keys(parCategorie);
+  const ctx2 = document.getElementById('graph-repartition');
+  if(graphRepartition) graphRepartition.destroy();
+  if(cats.length===0){
+    ctx2.getContext('2d').clearRect(0,0,ctx2.width,ctx2.height);
+  } else {
+    graphRepartition = new Chart(ctx2, {
+      type:'doughnut',
+      data:{ labels:cats, datasets:[{ data:cats.map(c=>parCategorie[c]), backgroundColor:cats.map((_,i)=>CLE_CATEGORIES_COULEURS[i%CLE_CATEGORIES_COULEURS.length]) }]},
+      options:{ plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}} }
+    });
+  }
+}
+
+function rafraichirTout(){
+  rafraichirDashboard();
+  rafraichirCharges();
+  rafraichirHistorique();
+  rafraichirStats();
+}
+
+/* ---------------- Navigation ---------------- */
+function allerVue(nom){
+  document.querySelectorAll('.vue').forEach(v=>v.classList.remove('active'));
+  document.getElementById('vue-'+nom).classList.add('active');
+  document.querySelectorAll('nav.barre-nav button').forEach(b=>b.classList.toggle('actif', b.dataset.vue===nom));
+  if(nom==='stats') rafraichirStats();
+}
+
+/* ---------------- Modales ---------------- */
+function fermerModales(){ document.querySelectorAll('.fond-modale').forEach(m=>m.classList.remove('ouverte')); }
+function ouvrirModaleSalaire(){ document.getElementById('sal-montant').value=''; document.getElementById('sal-commentaire').value=''; document.getElementById('modale-salaire').classList.add('ouverte'); }
+function ouvrirModaleCharge(){ document.getElementById('ch-libelle').value=''; document.getElementById('ch-categorie').value=''; document.getElementById('ch-montant').value=''; document.getElementById('modale-charge').classList.add('ouverte'); }
+let typeEpargneCourant='Depot';
+function ouvrirModaleEpargne(type){
+  typeEpargneCourant=type;
+  document.getElementById('epargne-titre').textContent = type==='Depot' ? 'Déposer de l’épargne' : 'Retirer de l’épargne';
+  document.getElementById('ep-montant').value=''; document.getElementById('ep-libelle').value='';
+  document.getElementById('modale-epargne').classList.add('ouverte');
+}
+
+function validerSalaire(){
+  const montant = parseFloat(document.getElementById('sal-montant').value);
+  if(!montant || montant<=0){ afficherToast('Entrez un montant valide'); return; }
+  const commentaire = document.getElementById('sal-commentaire').value.trim();
+  etat.salaires.push({id:genId(), date:new Date().toISOString().slice(0,10), montant, commentaire});
+  enregistrerHistorique('Salaire','Salaire de '+nomMoisAnnee(new Date().toISOString().slice(0,10)), montant);
+  fermerModales(); rafraichirTout();
+  afficherToast('Salaire enregistré : '+formaterMontant(montant));
+}
+function validerCharge(){
+  const libelle = document.getElementById('ch-libelle').value.trim();
+  const montant = parseFloat(document.getElementById('ch-montant').value);
+  if(!libelle){ afficherToast('Entrez un libellé'); return; }
+  if(!montant || montant<=0){ afficherToast('Entrez un montant valide'); return; }
+  const categorie = document.getElementById('ch-categorie').value.trim() || 'Autre';
+  etat.charges.push({id:genId(), libelle, categorie, montant, active:true});
+  enregistrerHistorique('Charge fixe','Nouvelle charge : '+libelle, -montant);
+  fermerModales(); rafraichirTout(); allerVue('charges');
+  afficherToast('Charge ajoutée');
+}
+function validerEpargne(){
+  const montant = parseFloat(document.getElementById('ep-montant').value);
+  if(!montant || montant<=0){ afficherToast('Entrez un montant valide'); return; }
+  if(typeEpargneCourant==='Retrait' && montant>soldeEpargneTotal()){
+    afficherToast('Solde épargne insuffisant ('+formaterMontant(soldeEpargneTotal())+')'); return;
+  }
+  const libelle = document.getElementById('ep-libelle').value.trim() || (typeEpargneCourant==='Depot'?'Dépôt d’épargne':'Retrait d’épargne');
+  etat.epargne.push({id:genId(), date:new Date().toISOString().slice(0,10), libelle, type:typeEpargneCourant, montant});
+  enregistrerHistorique('Épargne', libelle, typeEpargneCourant==='Depot'?-montant:montant);
+  fermerModales(); rafraichirTout();
+  afficherToast((typeEpargneCourant==='Depot'?'Dépôt':'Retrait')+' enregistré');
+}
+
+/* ---------------- Parametres ---------------- */
+function chargerParametresDansFormulaire(){
+  document.getElementById('param-nom').value = etat.parametres.nom;
+  document.getElementById('param-devise').value = etat.parametres.devise;
+  document.getElementById('param-seuil').value = etat.parametres.seuil;
+}
+function enregistrerParametres(){
+  etat.parametres.nom = document.getElementById('param-nom').value.trim() || 'Utilisateur';
+  etat.parametres.devise = document.getElementById('param-devise').value.trim() || 'F CFA';
+  etat.parametres.seuil = parseFloat(document.getElementById('param-seuil').value) || 0;
+  rafraichirTout();
+  afficherToast('Paramètres enregistrés');
+}
+
+/* ---------------- Sauvegarde manuelle (export/import JSON) ---------------- */
+function exporterSauvegarde(){
+  const blob = new Blob([JSON.stringify(etat,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const horodatage = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+  a.href = url; a.download = `MonSalaire_Sauvegarde_${horodatage}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  afficherToast('Sauvegarde téléchargée');
+}
+function importerSauvegarde(evenement){
+  const fichier = evenement.target.files[0];
+  if(!fichier) return;
+  const lecteur = new FileReader();
+  lecteur.onload = e => {
+    try{
+      const donnees = JSON.parse(e.target.result);
+      if(!donnees.parametres || !donnees.charges) throw new Error('format invalide');
+      etat = Object.assign({parametres:{nom:'Utilisateur',devise:'F CFA',seuil:0},salaires:[],charges:[],epargne:[],historique:[]}, donnees);
+      chargerParametresDansFormulaire();
+      rafraichirTout();
+      afficherToast('Sauvegarde importée avec succès');
+    }catch(err){
+      afficherToast('Fichier de sauvegarde invalide');
+    }
+  };
+  lecteur.readAsText(fichier);
+  evenement.target.value='';
+}
+
+/* ---------------- Utilitaires ---------------- */
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s??''; return d.innerHTML; }
+let toastTimer=null;
+function afficherToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('visible'), 2200);
+}
+
+/* ---------------- Initialisation ---------------- */
+chargerParametresDansFormulaire();
+rafraichirTout();
+</script>
+</body>
+</html>
